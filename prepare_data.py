@@ -4,6 +4,8 @@ import re
 import nltk
 import six.moves.cPickle as pickle
 
+data_glob = "data/scholarly-cit-sentences/*.txt"
+
 refRegex = re.compile(r"<(DBLP|ARXIV|DOI|GC):([^>]+)>")
 
 def prepare_sentence(sentence):
@@ -32,7 +34,7 @@ def build_dataset(targetFile):
     testSet = []
 
     idx = 0
-    for file in glob.glob("data/scholarly-cit-sentences/*.txt"):
+    for file in glob.glob(data_glob):
         with open(file, 'r') as myfile:
             data = myfile.read().split("\n============\n")
             for sentence in data:
