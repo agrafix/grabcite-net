@@ -12,8 +12,12 @@ import numpy
 
 from load_data import load_data
 
+# configuration
+max_words = 10000
+max_sentence_len = 50
+
 # IMDB Dataset loading
-train, test, check, word_dict_rev = load_data(path='ref_bool.pkl', n_words=10000,
+train, test, check, word_dict_rev = load_data(path='ref_bool.pkl', n_words=max_words,
                                               valid_portion=0.1)
 
 trainX, trainY = train
@@ -29,9 +33,9 @@ print(testY[1:5])
 
 # Data preprocessing
 # Sequence padding
-trainX = pad_sequences(trainX, maxlen=100, value=0.)
-testX = pad_sequences(testX, maxlen=100, value=0.)
-checkX = pad_sequences(checkX, maxlen=100, value=0.)
+trainX = pad_sequences(trainX, maxlen=max_sentence_len, value=0.)
+testX = pad_sequences(testX, maxlen=max_sentence_len, value=0.)
+checkX = pad_sequences(checkX, maxlen=max_sentence_len, value=0.)
 
 print(testX[1:5])
 print(testY[1:5])
@@ -45,8 +49,8 @@ print(testX[1:5])
 print(testY[1:5])
 
 # Building convolutional network
-network = input_data(shape=[None, 100], name='input')
-network = tflearn.embedding(network, input_dim=10000, output_dim=128)
+network = input_data(shape=[None, max_sentence_len], name='input')
+network = tflearn.embedding(network, input_dim=max_words, output_dim=128)
 branch1 = conv_1d(network, 128, 3, padding='valid', activation='relu', regularizer="L2")
 branch2 = conv_1d(network, 128, 4, padding='valid', activation='relu', regularizer="L2")
 branch3 = conv_1d(network, 128, 5, padding='valid', activation='relu', regularizer="L2")
