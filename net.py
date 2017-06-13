@@ -3,8 +3,9 @@
 
 import tensorflow as tf
 import tflearn
-from tflearn.data_utils import to_categorical, pad_sequences
+from tflearn.data_utils import to_categorical, pad_sequences, shuffle
 import numpy
+import random
 
 from load_data import load_data
 from arch import cit_nocit_cnn
@@ -27,6 +28,48 @@ print("Test size: " + str(len(testX)))
 
 print(testX[1:5])
 print(testY[1:5])
+
+# Evaluate data balance:
+cT = 0
+cF = 0
+cTotal = len(trainY)
+
+true_class = []
+false_class = []
+
+for idx, y in enumerate(trainY):
+    if y == 1:
+        true_class.append((trainX[idx], trainY[idx]))
+        cT += 1
+    else:
+        false_class.append((trainX[idx], trainY[idx]))
+        cF += 1
+
+print("Train distribution: true=" + str(cT) + " (" + str(cT / cTotal) + ") / false=" + str(cF) + " (" + str(cF / cTotal) + ")")
+
+trainX = []
+trainY = []
+
+if (cT / cTotal) < 0.4:
+    print("Unbalanced data detected, adjust by over and undersampling")
+    difference = cF - cT
+    print("Difference is: " + str(difference))
+    sample = int(difference / 15)
+    for tx, ty in true_class:
+        trainX.append(tx)
+        trainY.append(ty)
+    for i in range(0, sample):
+        x, y = random.choice(true_class)
+        trainX.append(x)
+        trainY.append(y)
+    for i in range(0, cT + sample):
+        x, y = random.choice(false_class)
+        trainX.append(x)
+        trainY.append(y)
+    print("Completed balancing, train size now is: " + str(len(trainX)))
+
+print("Shuffling data")
+trainX, trainY = shuffle(trainX, trainY)
 
 # Data preprocessing
 # Sequence padding
