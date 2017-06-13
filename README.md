@@ -21,3 +21,20 @@ Load data from a `prepare_data.py` training set, used by `net.py` and `predict.p
 ### evaluate_perf.py
 
 Run predictions on test set and print various scores
+
+
+## Results
+
+
+### Unbalanced
+
+```
+Total: 1548652
+TP: 7458
+FP: 3820
+TN: 1461287
+FN: 76087
+Precision: 0.6612874623160134
+Recall: 0.08926925608953258
+F1: 0.15730360777448507
+```
