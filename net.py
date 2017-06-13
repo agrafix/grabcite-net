@@ -67,12 +67,14 @@ model.fit(trainX, trainY, n_epoch = 10, shuffle=True, validation_set=(testX, tes
 model.save("trained_model.tfl")
 print("Wrote model to trained_model.tfl")
 
-print(checkX[1:5])
 results = model.predict(checkX)
-for idx, val in enumerate(results):
-    sentence_idx = checkX[idx]
-    sentence = [word_dict_rev[i] if i in word_dict_rev else '<unk>' for i in sentence_idx]
 
-    if val[0] < val[1]:
-        print(sentence)
-        print("Citation: " + str(val[1]))
+with open("train_results.txt", 'w') as f:
+    for idx, val in enumerate(results):
+        sentence_idx = checkX[idx]
+        sentence = [word_dict_rev[i] if i in word_dict_rev else '<unk>' for i in sentence_idx]
+
+        if val[0] < val[1]:
+            f.write("[CIT: " + str(round(val[1] * 100, 2)) + "]" + " ".join(sentence) + "\n")
+        else:
+            f.write("[NO CIT: " + str(round(val[0] * 100, 2)) + "]" + " ".join(sentence) + "\n")
