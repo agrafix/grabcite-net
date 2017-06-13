@@ -63,7 +63,9 @@ network = regression(network, optimizer='adam', learning_rate=0.001,
                      loss='categorical_crossentropy', name='target')
 # Training
 model = tflearn.DNN(network, tensorboard_verbose=0)
-model.fit(trainX, trainY, n_epoch = 5, shuffle=True, validation_set=(testX, testY), show_metric=True, batch_size=32)
+model.fit(trainX, trainY, n_epoch = 10, shuffle=True, validation_set=(testX, testY), show_metric=True, batch_size=32)
+model.save("trained_model.tfl")
+print("Wrote model to trained_model.tfl")
 
 print(checkX[1:5])
 results = model.predict(checkX)
