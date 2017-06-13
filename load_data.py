@@ -11,6 +11,18 @@ import os
 import numpy
 import tensorflow as tf
 
+def remove_fully_unk(tset):
+    x, y = tset
+    xF = []
+    yF = []
+
+    for idx, sent in enumerate(x):
+        if not all(word == 1 for word in sent):
+            xF.append(sent)
+            yF.append(y[idx])
+
+    return (xF, yF)
+
 def load_data(path="ref_bool.pkl", n_words=100000, valid_portion=0.1,
               maxlen=None,
               sort_by_len=True):
@@ -46,6 +58,8 @@ def load_data(path="ref_bool.pkl", n_words=100000, valid_portion=0.1,
 
     f.close()
     if maxlen:
+        print("Reducing total dataset to " + str(maxlen))
+
         new_train_set_x = []
         new_train_set_y = []
         for x, y in zip(train_set[0], train_set[1]):
@@ -56,6 +70,8 @@ def load_data(path="ref_bool.pkl", n_words=100000, valid_portion=0.1,
         del new_train_set_x, new_train_set_y
 
     # split training set into validation set
+    print("Splitting training set into validation set")
+
     train_set_x, train_set_y = train_set
     n_samples = len(train_set_x)
     sidx = numpy.random.permutation(n_samples)
@@ -75,6 +91,7 @@ def load_data(path="ref_bool.pkl", n_words=100000, valid_portion=0.1,
     valid_set_x, valid_set_y = valid_set
     train_set_x, train_set_y = train_set
 
+    print("Removing unknown words")
     train_set_x = remove_unk(train_set_x)
     valid_set_x = remove_unk(valid_set_x)
     test_set_x = remove_unk(test_set_x)
@@ -95,8 +112,9 @@ def load_data(path="ref_bool.pkl", n_words=100000, valid_portion=0.1,
         train_set_x = [train_set_x[i] for i in sorted_index]
         train_set_y = [train_set_y[i] for i in sorted_index]
 
-    train = (train_set_x, train_set_y)
-    valid = (valid_set_x, valid_set_y)
-    test = (test_set_x, test_set_y)
+    print("Removing sentences that only contain unknown words")
+    train = remove_fully_unk((train_set_x, train_set_y))
+    valid = remove_fully_unk((valid_set_x, valid_set_y))
+    test = remove_fully_unk((test_set_x, test_set_y))
 
     return train, valid, test, word_dict_rev
