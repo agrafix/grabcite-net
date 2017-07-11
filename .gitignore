@@ -2,3 +2,6 @@ __pycache__/
 data/
 *.pkl
 sync.sh
+data-tiny/
+data2/
+datasets/
