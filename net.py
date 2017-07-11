@@ -7,12 +7,8 @@ from tflearn.data_utils import to_categorical, pad_sequences, shuffle
 import numpy
 import random
 
-from load_data import load_data
-from arch import cit_nocit_cnn
-
-# configuration
-max_words = 10000
-max_sentence_len = 50
+from load_data import load_data, max_words, max_sentence_len
+from arch import cit_nocit_rnn
 
 # Dataset loading
 
@@ -50,22 +46,26 @@ print("Train distribution: true=" + str(cT) + " (" + str(cT / cTotal) + ") / fal
 trainX = []
 trainY = []
 
+random.shuffle(false_class)
+
 if (cT / cTotal) < 0.4:
     print("Unbalanced data detected, adjust by over and undersampling")
     difference = cF - cT
     print("Difference is: " + str(difference))
-    sample = int(difference / 15)
     for tx, ty in true_class:
         trainX.append(tx)
         trainY.append(ty)
-    for i in range(0, sample):
+
+    for i in range(len(true_class), len(true_class) + difference):
         x, y = random.choice(true_class)
         trainX.append(x)
         trainY.append(y)
-    for i in range(0, cT + sample):
-        x, y = random.choice(false_class)
+
+    for i in range(0, len(false_class) - 1):
+        x, y = false_class[i]
         trainX.append(x)
         trainY.append(y)
+
     print("Completed balancing, train size now is: " + str(len(trainX)))
 
 print("Shuffling data")
@@ -76,18 +76,18 @@ trainX, trainY = shuffle(trainX, trainY)
 trainX = pad_sequences(trainX, maxlen=max_sentence_len, value=0.)
 testX = pad_sequences(testX, maxlen=max_sentence_len, value=0.)
 
-print(testX[1:5])
-print(testY[1:5])
+print(trainX[1:5])
+print(trainY[1:5])
 
 # Converting labels to binary vectors
 trainY = to_categorical(trainY, nb_classes=2)
 testY = to_categorical(testY, nb_classes=2)
 
-print(testX[1:5])
-print(testY[1:5])
+print(trainX[1:5])
+print(trainY[1:5])
 
 # Train
-model = cit_nocit_cnn(max_sentence_len, max_words)
-model.fit(trainX, trainY, n_epoch = 10, shuffle=True, validation_set=(testX, testY), show_metric=True, batch_size=32)
+model = cit_nocit_rnn(max_sentence_len, max_words)
+model.fit(trainX, trainY, validation_set=(testX, testY), show_metric=True, batch_size=64, n_epoch=2)
 model.save("trained_model.tfl")
 print("Wrote model to trained_model.tfl")

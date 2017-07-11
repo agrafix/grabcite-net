@@ -3,15 +3,20 @@ import os
 import re
 import nltk
 import six.moves.cPickle as pickle
+import string
 
-data_glob = "data/scholarly-cit-sentences/*.txt"
+data_glob = "data/*.txt"
 
-refRegex = re.compile(r"<(DBLP|ARXIV|DOI|GC):([^>]+)>")
+refRegex = re.compile(r"<(DBLP|ARXIV|DOI|GC):([^>]*)>")
+
+alphaChars = set(string.ascii_letters)
 
 def prepare_sentence(sentence):
     refs = refRegex.findall(sentence)
     sentence = refRegex.sub("", sentence)
-    toks = [w.lower() for w in nltk.word_tokenize(sentence) if w.isalpha()]
+    rawToks = nltk.word_tokenize(sentence)
+    rawToks.append("<EOS>")
+    toks = [w.lower() for w in rawToks if any(c in alphaChars for c in w)]
     return refs, toks
 
 def mk_output(dataSet):

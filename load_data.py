@@ -11,15 +11,23 @@ import os
 import numpy
 import tensorflow as tf
 
+# configuration
+max_words = 20000
+max_sentence_len = 50
+
 def remove_fully_unk(tset):
     x, y = tset
     xF = []
     yF = []
 
     for idx, sent in enumerate(x):
-        if not all(word == 1 for word in sent):
-            xF.append(sent)
-            yF.append(y[idx])
+        if not all(word == 1 for word in sent) and len(sent) >= 5:
+            notUnk = sum(word != 1 for word in sent)
+            unk = sent.count(1)
+
+            if unk <= notUnk:
+                xF.append(sent)
+                yF.append(y[idx])
 
     return (xF, yF)
 
@@ -112,7 +120,7 @@ def load_data(path="ref_bool.pkl", n_words=100000, valid_portion=0.1,
         train_set_x = [train_set_x[i] for i in sorted_index]
         train_set_y = [train_set_y[i] for i in sorted_index]
 
-    print("Removing sentences that only contain unknown words")
+    print("Cleanup noisy sentences")
     train = remove_fully_unk((train_set_x, train_set_y))
     valid = remove_fully_unk((valid_set_x, valid_set_y))
     test = remove_fully_unk((test_set_x, test_set_y))
