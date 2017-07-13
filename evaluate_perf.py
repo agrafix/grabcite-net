@@ -1,11 +1,9 @@
-import tensorflow as tf
-import tflearn
-from tflearn.data_utils import to_categorical, pad_sequences
 import numpy
 import random
+import keras
+from keras.models import load_model
 
 from load_data import load_data, max_words, max_sentence_len
-from arch import cit_nocit_rnn
 
 def ts_chunks(l, l2, n):
     for i in range(0, len(l), n):
@@ -20,12 +18,11 @@ checkX, checkY = check
 
 print("Check size: " + str(len(checkX)))
 
-checkX = pad_sequences(checkX, maxlen=max_sentence_len, value=0.)
+checkX = keras.preprocessing.sequence.pad_sequences(checkX, maxlen=max_sentence_len, value=0.)
 
 # Predict
 print("Running predictions ...")
-model = cit_nocit_rnn(max_sentence_len, max_words)
-model.load("trained_model.tfl")
+model = load_model('trained.h5')
 print("Loaded model from trained_model.tfl")
 
 total = 0
@@ -84,4 +81,4 @@ print("F1: " + str(f1))
 random.shuffle(false_pos_list)
 short_list = false_pos_list[1:50]
 for el in short_list:
-    print(str(" ".join(el)).rstrip("~ "))
+    print(str(" ".join(el)).rstrip("~ ").lstrip("~ "))

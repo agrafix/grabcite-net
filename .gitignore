@@ -5,3 +5,5 @@ sync.sh
 data-tiny/
 data2/
 datasets/
+trained.h5
+trained_01.h5

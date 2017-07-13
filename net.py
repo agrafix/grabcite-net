@@ -2,8 +2,7 @@
 """
 
 import tensorflow as tf
-import tflearn
-from tflearn.data_utils import to_categorical, pad_sequences, shuffle
+import keras
 import numpy
 import random
 
@@ -46,8 +45,6 @@ print("Train distribution: true=" + str(cT) + " (" + str(cT / cTotal) + ") / fal
 trainX = []
 trainY = []
 
-random.shuffle(false_class)
-
 if (cT / cTotal) < 0.4:
     print("Unbalanced data detected, adjust by over and undersampling")
     difference = cF - cT
@@ -68,26 +65,26 @@ if (cT / cTotal) < 0.4:
 
     print("Completed balancing, train size now is: " + str(len(trainX)))
 
-print("Shuffling data")
-trainX, trainY = shuffle(trainX, trainY)
-
 # Data preprocessing
 # Sequence padding
-trainX = pad_sequences(trainX, maxlen=max_sentence_len, value=0.)
-testX = pad_sequences(testX, maxlen=max_sentence_len, value=0.)
+trainX = keras.preprocessing.sequence.pad_sequences(trainX, maxlen=max_sentence_len, value=0.)
+testX = keras.preprocessing.sequence.pad_sequences(testX, maxlen=max_sentence_len, value=0.)
 
 print(trainX[1:5])
 print(trainY[1:5])
 
 # Converting labels to binary vectors
-trainY = to_categorical(trainY, nb_classes=2)
-testY = to_categorical(testY, nb_classes=2)
+trainY = keras.utils.to_categorical(trainY, num_classes=2)
+testY = keras.utils.to_categorical(testY, num_classes=2)
 
 print(trainX[1:5])
 print(trainY[1:5])
 
 # Train
 model = cit_nocit_rnn(max_sentence_len, max_words)
-model.fit(trainX, trainY, validation_set=(testX, testY), show_metric=True, batch_size=64, n_epoch=2)
-model.save("trained_model.tfl")
-print("Wrote model to trained_model.tfl")
+model.fit(trainX, trainY, epochs=1, batch_size=64)
+
+scores = model.evaluate(testX, testY, verbose=0)
+print("Accuracy: %.2f%%" % (scores[1]*100))
+
+model.save('trained.h5')
