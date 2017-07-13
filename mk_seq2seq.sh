@@ -1,4 +1,6 @@
-#!/bin/bash -eo pipefail
+#!/bin/bash
+
+set -e
 
 DATASET="tiny"
 
@@ -22,11 +24,12 @@ if [ "$1" == "train" ]; then
 
     export TRAIN_STEPS=1000
 
-    export MODEL_DIR=seq2seq_model/$DATASET/$(date +%F_%R)/
+    export MODEL_DIR=../seq2seq_model/$DATASET/$(date +%F_%R)/
+    cd seq2seq
+
     mkdir -p $MODEL_DIR
     echo "Model will be written to $MODEL_DIR"
 
-    cd seq2seq
     python3 -m bin.train \
       --config_paths="
           ./example_configs/nmt_small.yml,
@@ -52,4 +55,31 @@ if [ "$1" == "train" ]; then
       --batch_size 32 \
       --train_steps $TRAIN_STEPS \
       --output_dir $MODEL_DIR
+fi
+
+if [ "$1" == "predict" ]; then
+    if [ -z ${2+x} ]; then
+        echo "Missing second parameter describing model id"
+        exit 1
+    fi
+    export MODEL_DIR=../seq2seq_model/$DATASET/$2/
+    cd seq2seq
+
+    export PRED_DIR=${MODEL_DIR}/pred
+    mkdir -p ${PRED_DIR}
+
+    export VALID_SOURCES=../datasets/$DATASET.plain.valid.txt
+
+    python3 -m bin.infer \
+      --tasks "
+        - class: DecodeText" \
+      --model_dir $MODEL_DIR \
+      --input_pipeline "
+        class: ParallelTextInputPipeline
+        params:
+          source_files:
+            - $VALID_SOURCES" \
+      >  ${PRED_DIR}/predictions.txt
+
+    echo "Wrote to ${PRED_DIR}/predictions.txt"
 fi
