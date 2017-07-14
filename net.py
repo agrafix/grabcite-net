@@ -3,6 +3,7 @@
 
 import tensorflow as tf
 import keras
+import keras.backend as K
 import numpy
 import random
 
@@ -82,9 +83,11 @@ print(trainY[1:5])
 
 # Train
 model = cit_nocit_rnn(max_sentence_len, max_words)
-model.fit(trainX, trainY, epochs=1, batch_size=64)
+model.fit(trainX, trainY, epochs=5, batch_size=64)
 
 scores = model.evaluate(testX, testY, verbose=0)
 print("Accuracy: %.2f%%" % (scores[1]*100))
 
 model.save('trained.h5')
+
+K.clear_session()

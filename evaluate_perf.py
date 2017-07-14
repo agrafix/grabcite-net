@@ -2,6 +2,7 @@ import numpy
 import random
 import keras
 from keras.models import load_model
+import keras.backend as K
 
 from load_data import load_data, max_words, max_sentence_len
 
@@ -61,6 +62,8 @@ for xchunk, ychunk in ts_chunks(checkX, checkY, 1000):
                 true_neg += 1
             else:
                 false_neg += 1
+
+K.clear_session()
 
 precision = true_pos / (true_pos + false_pos)
 recall = true_pos / (true_pos + false_neg)
