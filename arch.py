@@ -3,11 +3,35 @@ from keras.layers.embeddings import Embedding
 from keras.layers.convolutional import Conv1D, ZeroPadding1D
 from keras.layers.pooling import MaxPooling1D
 from keras.layers.recurrent import GRU, LSTM
-from keras.layers import Input, Dense
-from keras.layers.merge import Concatenate
+from keras.layers import merge, Input, Dense, Lambda
+from keras.layers.merge import Concatenate, concatenate
 from keras import regularizers
+import keras.backend as K
 
 def cit_nocit_rnn(max_sentence_len, max_words):
+    inp = Input(shape=(max_sentence_len,))
+    emb = Embedding(max_words, 128, input_length=max_sentence_len)(inp)
+
+    fwd_rnn = LSTM(128, return_sequences=True)(emb)
+    rev_rnn = LSTM(128, return_sequences=True, go_backwards=True)(emb)
+
+    merged = concatenate([fwd_rnn, rev_rnn], axis=-1)
+
+    cnns = [Conv1D(500, filter_length, activation='tanh', padding='same') for filter_length in [1, 2, 3, 5]]
+    allCnns = concatenate([cnn(merged) for cnn in cnns])
+
+    maxpool = Lambda(lambda x: K.max(x, axis=1, keepdims=False), output_shape=lambda x: (x[0], x[2]))
+    maxpool.supports_masking = True
+
+    pooled = maxpool(allCnns)
+    dense = Dense(2, activation='sigmoid')(pooled)
+
+    model = Model(inputs=inp, outputs=dense)
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+    return model
+
+def cit_nocit_rnn_try(max_sentence_len, max_words):
     inp = Input(shape=(max_sentence_len,))
     emb = Embedding(max_words, 128, input_length=max_sentence_len)(inp)
 
