@@ -79,4 +79,5 @@ def build_dataset(targetFile):
         pickle.dump(testData, f)
         pickle.dump(wordDictRev, f)
 
-build_dataset("ref_bool.pkl")
+if __name__ == "__main__":
+    build_dataset("ref_bool.pkl")

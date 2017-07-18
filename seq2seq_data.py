@@ -74,4 +74,5 @@ def build_dataset(targetFile):
             citFile.write(k + "\t" + str(ct) + "\n")
     print("All done!")
 
-build_dataset("datasets/tiny")
+if __name__ == "__main__":
+    build_dataset("datasets/tiny")
