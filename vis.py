@@ -3,10 +3,15 @@
 # local imports
 import prepare_data as pd
 import seq2seq_data as s2s
+import dblp as dblp
 
 # package imports
 import glob
 import numpy as np
+from tqdm import tqdm
+import six.moves.cPickle as pickle
+from lxml import etree
+
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -17,10 +22,16 @@ from collections import Counter
 from xml.dom import minidom
 from urllib.request import urlopen
 import os
+import time
+import sys
 
-data_glob = "data/*.txt"
+data_glob = "data-tiny/*.txt"
 
-print("Working on " + data_glob)
+if not os.path.exists("dblp.db"):
+    print("Creating a DBLP lookup map... ")
+    dblp.go('dblp.xml', 'dblp.db')
+
+dblpMap = dblp.openMap('dblp.db')
 
 citMap = []
 citTyMap = []
@@ -32,12 +43,9 @@ def countUp(d, key):
     if key != None and key != "":
         d.append(key)
 
-def countXmlNodes(d, nodes):
-    for node in nodes:
-        ch = node.childNodes
-        if len(ch) > 0:
-            val = ch[0].nodeValue
-            countUp(d, val)
+def countEntries(d, entries):
+    for e in entries:
+        countUp(d, e)
 
 def plotHist(d, name, fname):
     counter = Counter(d)
@@ -53,7 +61,7 @@ def plotHist(d, name, fname):
     plt.suptitle(name, fontsize=14, fontweight='bold')
     plt.bar(indexes, counts, width)
     plt.xticks(indexes + width * 0.5, cats, rotation='vertical')
-    plt.tight_layout()
+    # plt.tight_layout()  <-- this breaks atm
 
     print("Writing " + fname)
     plt.savefig(fname)
@@ -62,6 +70,9 @@ def plotHist(d, name, fname):
 if not os.path.exists("vis"):
     os.makedirs("vis")
 
+countedPapers = set()
+
+print("Working on " + data_glob)
 for file in glob.glob(data_glob):
     with open(file, 'r') as myfile:
         data = myfile.read().split("\n============\n")
@@ -74,20 +85,18 @@ for file in glob.glob(data_glob):
                 countUp(citTyMap, ty)
 
                 if ty == 'DBLP':
-                    url = ref.replace("dblp.org/rec", "dblp.org/rec/xml") + ".xml"
-                    print("Fetching " + url)
+                    dblpId = ref.replace("http://dblp.org/rec/", "")
+                    print("Handling " + dblpId)
 
                     try:
-                        output = urlopen(url).read()
-                        xmldoc = minidom.parseString(output)
-                        authors = xmldoc.getElementsByTagName('author')
-                        journal = xmldoc.getElementsByTagName('journal')
-                        year = xmldoc.getElementsByTagName('year')
-                        countXmlNodes(authorMap, authors)
-                        countXmlNodes(journalMap, journal)
-                        countXmlNodes(yearMap, year)
+                        res = dblpMap.Get(dblpId.encode())
+                        entry = pickle.loads(res)
+                        countEntries(authorMap, entry["authors"])
+                        countEntries(journalMap, [entry["journal"]])
+                        countEntries(yearMap, [entry["year"]])
                     except:
-                        print("Download failed!")
+                        print("Unknown dblp id: " + dblpId)
+                        print(sys.exc_info()[0])
 
 
 plotHist(citMap, "Citations", "vis/cits.png")
