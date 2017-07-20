@@ -38,6 +38,7 @@ citTyMap = []
 authorMap = []
 journalMap = []
 yearMap = []
+hasCitMap = []
 
 def countUp(d, key):
     if key != None and key != "":
@@ -58,13 +59,16 @@ def plotHist(d, name, fname):
     indexes = np.arange(len(cats))
     width = 0.7
 
+    plt.figure(figsize=(40, 10))
+    plt.gcf().subplots_adjust(bottom=0.25)
+
     plt.suptitle(name, fontsize=14, fontweight='bold')
     plt.bar(indexes, counts, width)
-    plt.xticks(indexes + width * 0.5, cats, rotation='vertical')
+    plt.xticks(indexes + width * 0.5, cats, rotation='vertical', fontsize=6)
     # plt.tight_layout()  <-- this breaks atm
 
     print("Writing " + fname)
-    plt.savefig(fname)
+    plt.savefig(fname, dpi = (200))
     plt.close()
 
 if not os.path.exists("vis"):
@@ -78,6 +82,11 @@ for file in glob.glob(data_glob):
         data = myfile.read().split("\n============\n")
         for sentence in data:
             refs, _ = pd.prepare_sentence(sentence)
+
+            if len(refs) > 0:
+                countUp(hasCitMap, "yes")
+            else:
+                countUp(hasCitMap, "no")
 
             for (ty, ref) in refs:
 
@@ -99,6 +108,7 @@ for file in glob.glob(data_glob):
                         print(sys.exc_info()[0])
 
 
+plotHist(citMap, "Sentences with Citation", "vis/cit_yn.png")
 plotHist(citMap, "Citations", "vis/cits.png")
 plotHist(citTyMap, "Citation Types", "vis/cit_ty.png")
 plotHist(authorMap, "Authors", "vis/authors.png")
