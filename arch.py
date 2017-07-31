@@ -12,6 +12,26 @@ def cit_nocit_rnn(max_sentence_len, max_words):
     inp = Input(shape=(max_sentence_len,))
     emb = Embedding(max_words, 128, input_length=max_sentence_len)(inp)
 
+    cnns = [Conv1D(128, filter_length, activation='tanh', padding='same') for filter_length in [1, 2, 3, 5]]
+    allCnns = concatenate([cnn(emb) for cnn in cnns])
+
+    pooled = MaxPooling1D(pool_size=2)(allCnns)
+
+    rnn = GRU(128, dropout=0.2, recurrent_dropout=0.2, return_sequences=True)(pooled)
+    rnn2 = GRU(64, dropout=0.2, recurrent_dropout=0.2, return_sequences=True)(rnn)
+    rnn3 = GRU(32, dropout=0.2, recurrent_dropout=0.2)(rnn2)
+
+    dense = Dense(2, activation='softmax')(rnn3)
+
+    model = Model(inputs=inp, outputs=dense)
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+    return model
+
+def cit_nocit_rnn_rnn_cnn(max_sentence_len, max_words):
+    inp = Input(shape=(max_sentence_len,))
+    emb = Embedding(max_words, 128, input_length=max_sentence_len)(inp)
+
     fwd_rnn = LSTM(128, return_sequences=True)(emb)
     rev_rnn = LSTM(128, return_sequences=True, go_backwards=True)(emb)
 
