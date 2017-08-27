@@ -7,7 +7,6 @@ import prepare_data as pd
 import glob
 import numpy as np
 from tqdm import tqdm
-from graphviz import Digraph
 
 import matplotlib
 matplotlib.use('agg')
@@ -25,7 +24,7 @@ from functools import lru_cache
 import urllib.parse
 import json
 
-data_glob = "data-tiny/*.txt"
+data_glob = "data/*.txt"
 
 citMap = []
 citTyMap = []
@@ -86,7 +85,7 @@ def getEntry(ref):
     print("Fetching " + url)
 
     try:
-        output = urlopen(url).read()
+        output = urlopen(url).read().decode('utf-8')
         entry = json.loads(output)
         return entry
     except:
@@ -98,7 +97,8 @@ if not os.path.exists("vis"):
 
 countedPapers = set()
 
-graphMap = {}
+dataSetPapers = set()
+referencePapers = set()
 
 print("Working on " + data_glob)
 for file in glob.glob(data_glob):
@@ -108,6 +108,7 @@ for file in glob.glob(data_glob):
         with open(metaName, 'r') as metaHandle:
             data = json.loads(metaHandle.read())
             myUrl = data["info"]["url"]
+            dataSetPapers.add(myUrl)
     print("DBLP of " + file + " is " + str(myUrl))
 
     with open(file, 'r') as myfile:
@@ -126,17 +127,12 @@ for file in glob.glob(data_glob):
                 countUp(citTyMap, ty)
 
                 if ty == 'DBLP':
-                    if myUrl is not None:
-                        if myUrl not in graphMap:
-                            graphMap[myUrl] = set()
-                        graphMap[myUrl].add(ref)
-
+                    referencePapers.add(ref)
                     entry = getEntry(ref)
                     if entry != None:
                         countEntries(authorMap, entry["authors"])
                         countEntries(journalMap, [entry["journal"]])
                         countEntries(yearMap, [str(entry["year"])])
-    break # TODO FIXME
 
 # Plot all the things
 plotHist(hasCitMap, "Sentences with Citation", "vis/cit_yn.png")
@@ -146,18 +142,7 @@ plotHist(authorMap, "Authors", "vis/authors.png")
 plotHist(journalMap, "Journals", "vis/journals.png")
 plotHist(yearMap, "Years", "vis/years.png")
 
-# Paint the graph
-print("Building the full graph")
-dot = Digraph(comment='Citation Graph')
-allNodes = set(graphMap.keys())
-for k in tqdm(graphMap.keys(), desc='Computing all nodes', unit='sources'):
-    allNodes = allNodes.intersection(graphMap[k])
-
-for n in tqdm(allNodes, desc='Adding all nodes', unit='nodes'):
-    dot.node(n, n)
-
-for k in graphMap.keys():
-    for tgt in graphMap[k]:
-        dot.edge(k, tgt)
-
-dot.render('vis/graph.gv')
+# Graph info
+print("Inner-graph citations: " + str(len(referencePapers.intersection(dataSetPapers))))
+print("Dangeling citations: " + str(len(referencePapers.difference(dataSetPapers))))
+print("Uncited graph papers: " + str(len(dataSetPapers.difference(referencePapers))))
