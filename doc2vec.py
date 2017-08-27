@@ -76,7 +76,7 @@ def citation_contexts(all_words, around):
 
             after = []
             xdi = idx
-            while xdi < len(all_words) and len(after) < around:
+            while xdi < len(all_words) - 1 and len(after) < around:
                 xdi += 1
                 if not isinstance(all_words[xdi], Reference):
                     after.append(all_words[xdi])
@@ -109,6 +109,8 @@ def build_dataset(targetFile, around=10):
         model.alpha -= 0.002  # decrease the learning rate
         model.min_alpha = model.alpha  # fix the learning rate, no decay
     print("Training complete")
+    print("Writing " + targetFile)
+    model.save(targetFile)
 
     new_doc = model.infer_vector("is to use machine learning".split(" "))
     print(new_doc)
@@ -119,4 +121,4 @@ def build_dataset(targetFile, around=10):
     print(sims)
 
 if __name__ == "__main__":
-    build_dataset("wordvec2.pkl")
+    build_dataset("arxiv.doc2vec")
