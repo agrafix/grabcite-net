@@ -8,3 +8,9 @@ datasets/
 trained.h5
 trained_01.h5
 vis/
+tiny-glove.txt
+prepared-data/
+trained-models/
+dblp.*
+.DS_Store
+vis.tar.gz
