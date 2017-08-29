@@ -7,6 +7,27 @@ from keras.layers import merge, Input, Dense, Lambda
 from keras.layers.merge import Concatenate, concatenate
 from keras import regularizers
 import keras.backend as K
+import glove as g
+
+def cit_nocit_rnn_pretrained(max_sentence_len, max_words, word_dict, embedding_matrix):
+    inp = Input(shape=(max_sentence_len,))
+    emb = g.getEmbeddingLayer(word_dict, embedding_matrix, max_sentence_len)(inp)
+
+    cnns = [Conv1D(g.getEmbeddingDim(), filter_length, activation='tanh', padding='same') for filter_length in [1, 2, 3, 5]]
+    allCnns = concatenate([cnn(emb) for cnn in cnns])
+
+    pooled = MaxPooling1D(pool_size=2)(allCnns)
+
+    rnn = GRU(128, dropout=0.2, recurrent_dropout=0.2, return_sequences=True)(pooled)
+    rnn2 = GRU(64, dropout=0.2, recurrent_dropout=0.2, return_sequences=True)(rnn)
+    rnn3 = GRU(32, dropout=0.2, recurrent_dropout=0.2)(rnn2)
+
+    dense = Dense(2, activation='softmax')(rnn3)
+
+    model = Model(inputs=inp, outputs=dense)
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+    return model
 
 def cit_nocit_rnn(max_sentence_len, max_words):
     inp = Input(shape=(max_sentence_len,))
