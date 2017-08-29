@@ -2,6 +2,7 @@
 
 # local imports
 import prepare_data as pd
+from config import data_glob
 
 # package imports
 import glob
@@ -23,8 +24,6 @@ import csv
 from functools import lru_cache
 import urllib.parse
 import json
-
-data_glob = "data/*.txt"
 
 citMap = []
 citTyMap = []
@@ -92,8 +91,10 @@ def getEntry(ref):
         print(sys.exc_info())
         return None
 
-if not os.path.exists("vis"):
-    os.makedirs("vis")
+dirName = "vis-" + str(time.time())
+print("Output is going to go to " + dirName)
+if not os.path.exists(dirName):
+    os.makedirs(dirName)
 
 countedPapers = set()
 
@@ -135,12 +136,12 @@ for file in glob.glob(data_glob):
                         countEntries(yearMap, [str(entry["year"])])
 
 # Plot all the things
-plotHist(hasCitMap, "Sentences with Citation", "vis/cit_yn.png")
-plotHist(citMap, "Citations", "vis/cits.png")
-plotHist(citTyMap, "Citation Types", "vis/cit_ty.png")
-plotHist(authorMap, "Authors", "vis/authors.png")
-plotHist(journalMap, "Journals", "vis/journals.png")
-plotHist(yearMap, "Years", "vis/years.png")
+plotHist(hasCitMap, "Sentences with Citation", dirName + "/cit_yn.png")
+plotHist(citMap, "Citations", dirName + "/cits.png")
+plotHist(citTyMap, "Citation Types", dirName + "/cit_ty.png")
+plotHist(authorMap, "Authors", dirName + "/authors.png")
+plotHist(journalMap, "Journals", dirName + "/journals.png")
+plotHist(yearMap, "Years", dirName + "/years.png")
 
 # Graph info
 print("Inner-graph citations: " + str(len(referencePapers.intersection(dataSetPapers))))

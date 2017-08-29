@@ -12,7 +12,7 @@ def ts_chunks(l, l2, n):
 
 # Dataset loading
 print("Loading dataset ...")
-_, _, check, word_dict_rev = load_data(path='ref_bool.pkl', n_words=max_words,
+_, _, check, _, word_dict_rev = load_data(path=u.getMostRecentOf("prepared-data/prepared", "pkl"), n_words=max_words,
                                               valid_portion=0.1)
 
 checkX, checkY = check
@@ -23,8 +23,7 @@ checkX = keras.preprocessing.sequence.pad_sequences(checkX, maxlen=max_sentence_
 
 # Predict
 print("Running predictions ...")
-model = load_model('trained.h5')
-print("Loaded model from trained_model.tfl")
+model = load_model(u.getMostRecentOf("trained-models/trained", "h5"))
 
 total = 0
 

@@ -7,14 +7,16 @@ import keras.backend as K
 import numpy
 import random
 
+import glove as g
+import utils as u
 from load_data import load_data, max_words, max_sentence_len
-from arch import cit_nocit_rnn
+from arch import cit_nocit_rnn_pretrained
 
 # Dataset loading
 
 print("Loading dataset ... ")
-train, test, _, _ = load_data(path='ref_bool.pkl', n_words=max_words,
-                              valid_portion=0.1)
+train, test, _, word_dict, _ = load_data(path=u.getMostRecentOf("prepared-data/prepared", "pkl"), n_words=max_words,
+                                         valid_portion=0.1)
 
 trainX, trainY = train
 testX, testY = test
@@ -81,13 +83,20 @@ testY = keras.utils.to_categorical(testY, num_classes=2)
 print(trainX[1:5])
 print(trainY[1:5])
 
+# Load word vectors
+embedding_vecs = g.loadEmbeddingVecs()
+embedding_matrix = g.computeEmbeddingMatrix(embedding_vecs, word_dict)
+
 # Train
-model = cit_nocit_rnn(max_sentence_len, max_words)
+model = cit_nocit_rnn_pretrained(max_sentence_len, max_words, word_dict, embedding_matrix)
 model.fit(trainX, trainY, epochs=5, batch_size=64)
 
 scores = model.evaluate(testX, testY, verbose=0)
 print("Accuracy: %.2f%%" % (scores[1]*100))
 
-model.save('trained.h5')
+if not os.path.exists("trained-models"):
+    os.makedirs("trained-models")
+
+model.save(u.makeTimedFilename('trained-models/trained', 'h5'))
 
 K.clear_session()

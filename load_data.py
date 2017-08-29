@@ -63,6 +63,7 @@ def load_data(path="ref_bool.pkl", n_words=100000, valid_portion=0.1,
     train_set = pickle.load(f)
     test_set = pickle.load(f)
     word_dict_rev = pickle.load(f)
+    word_dict = pickle.load(f)
 
     f.close()
     if maxlen:
@@ -125,4 +126,4 @@ def load_data(path="ref_bool.pkl", n_words=100000, valid_portion=0.1,
     valid = remove_fully_unk((valid_set_x, valid_set_y))
     test = remove_fully_unk((test_set_x, test_set_y))
 
-    return train, valid, test, word_dict_rev
+    return train, valid, test, word_dict, word_dict_rev

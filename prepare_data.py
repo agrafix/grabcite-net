@@ -5,11 +5,8 @@ import nltk
 import six.moves.cPickle as pickle
 import string
 
-data_glob = "data/*.txt"
-
-refRegex = re.compile(r"<(DBLP|ARXIV|DOI|GC):([^>]*)>")
-
-alphaChars = set(string.ascii_letters)
+import utils as u
+from config import data_glob, refRegex, alphaChars
 
 def prepare_sentence(sentence):
     refs = refRegex.findall(sentence)
@@ -37,6 +34,8 @@ def build_dataset(targetFile):
 
     trainSet = []
     testSet = []
+
+    print("Building dataset from " + data_glob + " to " + targetFile + " ...")
 
     idx = 0
     for file in glob.glob(data_glob):
@@ -78,6 +77,10 @@ def build_dataset(targetFile):
         pickle.dump(trainData, f)
         pickle.dump(testData, f)
         pickle.dump(wordDictRev, f)
+        pickle.dump(wordDict, f)
 
 if __name__ == "__main__":
-    build_dataset("ref_bool.pkl")
+    if not os.path.exists("prepared-data"):
+        os.makedirs("prepared-data")
+
+    build_dataset(u.makeTimedFilename("prepared-data/prepared", "pkl"))

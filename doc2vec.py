@@ -8,9 +8,7 @@ import gensim
 from gensim.models import Doc2Vec
 from gensim.models.doc2vec import LabeledSentence
 
-data_glob = "data/*.txt"
-refRegex = re.compile(r"<(DBLP|ARXIV|DOI|GC):([^>]*)>")
-alphaChars = set(string.ascii_letters)
+from config import data_glob, refRegex, alphaChars
 
 class Reference:
     def __init__(self, content):

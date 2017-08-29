@@ -9,11 +9,7 @@ import six.moves.cPickle as pickle
 import string
 import hashlib
 
-data_glob = "data-tiny/*.txt"
-
-refRegex = re.compile(r"<(DBLP|ARXIV|DOI|GC):([^>]*)>")
-
-alphaChars = set(string.ascii_letters)
+from config import data_glob, refRegex, alphaChars
 
 citMap = {}
 
