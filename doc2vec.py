@@ -116,7 +116,5 @@ def build_dataset(targetFile, around=10):
     sims = model.docvecs.most_similar([new_doc], topn=5)
     print(sims)
 
-    print(sims)
-
 if __name__ == "__main__":
     build_dataset("arxiv.doc2vec")
