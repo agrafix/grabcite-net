@@ -31,6 +31,20 @@ def remove_fully_unk(tset):
 
     return (xF, yF)
 
+def load_word_dicts(path="ref_bool.pkl"):
+    if path.endswith(".gz"):
+        f = gzip.open(path, 'rb')
+    else:
+        f = open(path, 'rb')
+
+    pickle.load(f)
+    pickle.load(f)
+    word_dict_rev = pickle.load(f)
+    word_dict = pickle.load(f)
+
+    f.close()
+    return (word_dict, word_dict_rev)
+
 def load_data(path="ref_bool.pkl", n_words=100000, valid_portion=0.1,
               maxlen=None,
               sort_by_len=True):
