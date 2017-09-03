@@ -13,7 +13,7 @@ def handleToken(tok, occurs):
     else:
         occurs[tok] = 1
 
-def buildDictionary(occurs, dictSizeMax=30000):
+def buildDictionary(occurs, wordDictSizeMax=30000, refDictSizeMax=30000):
     refList = []
     fullList = []
     for key, value in occurs.items():
@@ -21,14 +21,14 @@ def buildDictionary(occurs, dictSizeMax=30000):
             refList.append((key, value))
         else:
             fullList.append((key, value))
+    refList.sort(key=lambda x: x[1], reverse=True)
     fullList.sort(key=lambda x: x[1], reverse=True)
 
-    maxFull = dictSizeMax - len(refList)
-    fullSource = refList + fullList[:maxFull]
+    fullSource = refList[:refDictSizeMax] + fullList[:wordDictSizeMax]
 
     refIds = set()
     tokenMapper = BiDict()
-    nextTokenId = 2
+    nextTokenId = 3
     for (tok, val) in fullSource:
         tokenId = tokenMapper.getFirst(tok)
         if tokenId == None:
@@ -46,7 +46,10 @@ def toksToIdx(toks, tokenMapper):
     for t in toks:
         tokenId = tokenMapper.getFirst(t)
         if tokenId == None:
-            tokenId = 1
+            if isinstance(t, it.Reference):
+                tokenId = 2 # unk ref
+            else:
+                tokenId = 1 # unk word
         out.append(tokenId)
     return out
 
@@ -63,7 +66,7 @@ if __name__ == "__main__":
 
     print("Building dictionary ...")
     (tokenDict, refIds) = buildDictionary(occurs)
-
+    print("Done. Size is " + str(len(tokenDict.fwd)))
 
     print("Generating training data ...")
     X = []

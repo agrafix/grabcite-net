@@ -3,6 +3,8 @@ import keras
 import os
 from keras.models import Sequential
 from keras.layers import Embedding, LSTM, Dense, Activation, RepeatVector, TimeDistributed, Flatten
+import keras.backend as K
+from keras.callbacks import ModelCheckpoint
 
 import utils as u
 
@@ -39,10 +41,14 @@ if __name__ == "__main__":
     testX = pad(testX)
     testY = pad(testY)
 
+    print("Building the model")
     model = Sequential()
 
+    knownWordCount = len(tokMapper.fwd)
+    print("There are " + str(knownWordCount) + " words in the dictionary.")
+
     # Creating encoder network
-    model.add(Embedding(30000 + 1, 1000, input_length=max_sentence_len, mask_zero=True))
+    model.add(Embedding(knownWordCount + 2, hidden_size, input_length=max_sentence_len, mask_zero=True))
     model.add(LSTM(hidden_size))
     model.add(RepeatVector(max_sentence_len))
 
@@ -56,14 +62,22 @@ if __name__ == "__main__":
                   optimizer='rmsprop',
                   metrics=['accuracy'])
 
-    model.fit(trainX, trainY, epochs=5, batch_size=64)
+    print("Let's train this...!")
+    cptLoc = u.makeTimedFilename('trained-models/seq_cpt', 'h5')
+    print("Checkpoints will go to " + cptLoc)
+    checkpointer = ModelCheckpoint(filepath=cptLoc, verbose=1, save_best_only=True)
 
+    model.fit(trainX, trainY, epochs=5, batch_size=64, validation_data=(testX, testY), callbacks=[checkpointer])
+
+    print("Evaluating ...")
     scores = model.evaluate(testX, testY, verbose=0)
     print("Accuracy: %.2f%%" % (scores[1]*100))
 
     if not os.path.exists("trained-models"):
         os.makedirs("trained-models")
 
+    print("Writing everything to disk")
     model.save(u.makeTimedFilename('trained-models/seq_trained', 'h5'))
 
+    print("K bye!")
     K.clear_session()
