@@ -13,6 +13,9 @@ class Reference:
     def __repr__(self):
         return self.content
 
+    def noAngles(self):
+        return self.content[1:-1]
+
 def sentence_words(sentence):
     toks = nltk.word_tokenize(sentence)
     total_toks = len(toks)
