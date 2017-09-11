@@ -1,12 +1,8 @@
 import glob
-import os
-import re
 import nltk
-import six.moves.cPickle as pickle
-import string
-import gensim
 from gensim.models import Doc2Vec
 from gensim.models.doc2vec import LabeledSentence
+from random import shuffle
 
 from config import data_glob, refRegex, alphaChars
 
@@ -54,11 +50,11 @@ def sentence_words(sentence):
             newToks.append(tok.lower())
         idx += 1
 
-    outToks = [w for w in newToks if isinstance(w, Reference) or any(c in alphaChars for c in w)]
+    outToks = newToks
 
     return outToks
 
-def citation_contexts(all_words, around):
+def citation_contexts(all_words, around, only_cits=False):
     idx = around
     ctxs = []
     while idx < len(all_words) - around:
@@ -81,13 +77,22 @@ def citation_contexts(all_words, around):
 
             if len(before) == around and len(after) == around:
                 ctxs.append((tok, before, after))
+        else:
+            if idx > around and not only_cits:
+                before = all_words[idx - around:idx]
+                after = all_words[idx + 1:idx + around]
+
+                noCit = all(not isinstance(w, Reference) for w in before) and all(not isinstance(w, Reference) for w in after)
+                if noCit:
+                    ctxs.append((tok, before, after))
+                    idx += around - 1
         idx += 1
     return ctxs
 
 def build_dataset(targetFile, around=10):
-    idx = 0
     contexts = []
     print("Extracting contexts ...")
+    noneIdx = 0
     for file in glob.glob(data_glob):
         with open(file, 'r') as myfile:
             data = myfile.read().split("\n============\n")
@@ -96,16 +101,24 @@ def build_dataset(targetFile, around=10):
                 all_words += sentence_words(sentence)
             ctxs = citation_contexts(all_words, around)
             for (ref, before, after) in ctxs:
-                contexts.append(LabeledSentence(words=(before + after), tags=[str(ref)]))
+                if isinstance(ref, Reference):
+                    contexts.append(LabeledSentence(words=(before + after), tags=[str(ref)]))
+                else:
+                    contexts.append(LabeledSentence(words=(before + [ref] + after), tags=["<none" + str(noneIdx) + ">"]))
+
+    alpha, min_alpha, passes = (0.025, 0.001, 20)
+    alpha_delta = (alpha - min_alpha) / passes
 
     print("Got " + str(len(contexts)) + " contexts ... Training")
-    model = Doc2Vec(alpha=0.025, min_alpha=0.025, dm=1, dm_concat=1, size=100, window=around, negative=5, hs=0, min_count=2)
+    model = Doc2Vec(dm=1, dm_concat=1, size=100, window=5, negative=5, hs=0, min_count=2, workers=4)
     model.build_vocab(contexts)
-    for epoch in range(10):
-        print("Epoch " + str(epoch))
-        model.train(contexts, total_examples = len(contexts), epochs = 1)
-        model.alpha -= 0.002  # decrease the learning rate
-        model.min_alpha = model.alpha  # fix the learning rate, no decay
+    for epoch in range(passes):
+        shuffle(contexts)
+        print("Epoch " + str(epoch) + "/" + str(passes) + ", alpha= " + str(alpha))
+        model.train(contexts, total_examples=len(contexts), epochs=1)
+
+        alpha -= alpha_delta
+        model.alpha, model.min_alpha = alpha, alpha
     print("Training complete")
     print("Writing " + targetFile)
     model.save(targetFile)
