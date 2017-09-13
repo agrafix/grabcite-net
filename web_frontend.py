@@ -6,6 +6,7 @@ import nltk
 import utils as u
 from load_data import load_word_dicts, max_sentence_len
 from prepare_data import prepare_sentence
+from recommender_lsi import QueryEngine, QueryResult
 
 # Dataset loading
 print("Loading dataset ...")
@@ -13,6 +14,9 @@ wordDict, wordDictRev = load_word_dicts(path=u.getMostRecentOf("prepared-data/pr
 
 print("Loading model ...")
 model = load_model(u.getMostRecentOf("trained-models/trained", "h5"))
+
+print("Loading query engine ...")
+qe = QueryEngine()
 
 print("Ready ...")
 
@@ -53,3 +57,10 @@ def annotate():
 
     print(out)
     return jsonify({"ranges": out})
+
+@app.route("/recommend", methods=["POST"])
+def recommend():
+    content = request.get_json(silent=True)
+    body = content["query"]
+    res = qe.recommendCits(body)
+    return jsonify({"recommendations": [r.toDict() for r in res]})

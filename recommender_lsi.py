@@ -29,7 +29,7 @@ class QueryResult:
 
     def toDict(self):
         return {
-            'prob': self.prob,
+            'prob': float(self.prob),
             'papers': self.papers,
             'nouns': self.nouns
         }
@@ -72,6 +72,8 @@ class QueryEngine:
 
         for i in range(0, 10):
             print(self.simToRes(sims[i]))
+
+        return [self.simToRes(x) for x in sims[0:5]]
 
 def build_dataset(nameMaker):
     all_refs = []
