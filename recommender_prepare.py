@@ -24,9 +24,9 @@ class PaperEntry:
 
     def allWords(self):
         words = nltk.word_tokenize(self.title)
-        for (refStr, words, refTitle) in self.contexts:
-            words += words
-            words += nltk.word_tokenize(refTitle)
+        for (refStr, myWords, refTitle) in self.contexts:
+            words.extend(myWords)
+            words.extend(nltk.word_tokenize(refTitle))
         return words
 
     def remapWords(self, wordMapper):
@@ -76,10 +76,10 @@ def build_dataset(targetFile, around=10):
         if os.path.isfile(metaFile):
             with open(metaFile) as metaFileB:
                 j = json.load(metaFileB)
-                if "info" in j and "title" in j["info"]:
-                    docTitle = j["info"]["title"]
-                if "info" in j and "url" in j["info"]:
-                    url = j["info"]["url"]
+                if "title" in j:
+                    docTitle = j["title"]
+                if "url" in j:
+                    url = j["url"]
 
         refDict = {}
         if os.path.isfile(refsFile):
@@ -96,16 +96,21 @@ def build_dataset(targetFile, around=10):
         local_contexts = []
         with open(file, 'r') as myfile:
             data = myfile.read().split("\n============\n")
-            all_words = []
             for sentence in data:
-                all_words += sentence_words(sentence)
-            ctxs = citation_contexts(all_words, around, only_cits=True)
-            for (ref, before, after) in ctxs:
-                words = before + after
-                refStr = ref.noAngles()
+                toks = sentence_words(sentence)
+                words = []
+                refs = []
+                for tok in toks:
+                    if isinstance(tok, Reference):
+                        refs.append(tok)
+                    else:
+                        words.append(tok)
 
-                if refStr in refDict:
-                    local_contexts.append((refStr, words, refDict[refStr]))
+                for ref in refs:
+                    refStr = ref.noAngles()
+
+                    if refStr in refDict:
+                        local_contexts.append((refStr, words, refDict[refStr]))
 
         if docTitle != None:
             all_papers.append(PaperEntry(docTitle, url, local_contexts, refDict))
@@ -121,7 +126,7 @@ def build_dataset(targetFile, around=10):
     all_vectors = []
     for paper in all_papers:
         myPositives = paper.toVectors()
-        all_vectors += myPositives
+        all_vectors.extend(myPositives)
         for mp in myPositives:
             pick = choice(all_papers)
             rt = pick.anyRefTitle()
