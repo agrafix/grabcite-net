@@ -19,9 +19,10 @@ def getNouns(x):
     return nouns
 
 class QueryResult:
-    def __init__(self, prob, papers, nouns):
+    def __init__(self, prob, papers, paperRefs, nouns):
         self.prob = prob
         self.papers = papers
+        self.paperRefs = paperRefs
         self.nouns = nouns
 
     def __str__(self):
@@ -50,19 +51,22 @@ class QueryEngine:
         prob = sim[1]
 
         out = []
+        outRefs = []
 
         data = self.refMap[docIdx]
         for ref in data[0]:
             refStr = ref.noAngles()
+            outRefs.append(ref)
 
             if refStr in self.refDict:
                 out.append(self.refDict[refStr])
             else:
                 out.append(refStr)
 
-        return QueryResult(prob, out, data[1])
 
-    def recommendCits(self, sentence):
+        return QueryResult(prob, out, outRefs, data[1])
+
+    def recommendCits(self, sentence, topN=5):
         myNouns = getNouns(sentence)
         vec_bow = self.dict.doc2bow(myNouns)
         vec_tfidf = self.tfidf[vec_bow]
@@ -70,10 +74,7 @@ class QueryEngine:
         sims = self.idx[vec_lsi]
         sims = sorted(enumerate(sims), key=lambda item: -item[1])
 
-        for i in range(0, 10):
-            print(self.simToRes(sims[i]))
-
-        return [self.simToRes(x) for x in sims[0:5]]
+        return [self.simToRes(x) for x in sims[0:topN]]
 
 def build_dataset(nameMaker):
     all_refs = []
