@@ -66,11 +66,15 @@ class QueryEngine:
 
         return QueryResult(prob, out, outRefs, data[1])
 
-    def recommendCits(self, sentence, topN=5):
+    def sentenceVectors(self, sentence):
         myNouns = getNouns(sentence)
         vec_bow = self.dict.doc2bow(myNouns)
         vec_tfidf = self.tfidf[vec_bow]
         vec_lsi = self.lsi[vec_tfidf]
+        return vec_lsi
+
+    def recommendCits(self, sentence, topN=5):
+        vec_lsi = self.sentenceVectors(sentence)
         sims = self.idx[vec_lsi]
         sims = sorted(enumerate(sims), key=lambda item: -item[1])
 
@@ -85,6 +89,7 @@ def build_dataset(nameMaker):
     refDict = {}
 
     tokTexts = []
+    ctr = 0
 
     for file in tqdm(glob.glob(data_glob), unit='files'):
         base = os.path.splitext(file)[0]
@@ -107,6 +112,10 @@ def build_dataset(nameMaker):
                 sentence = sentence.replace("<formula>", " ")
                 toks = sentence_words(sentence)
                 if any(isinstance(t, Reference) for t in toks):
+                    ctr += 1
+                    if ctr % 100 == 0: # for train / test split
+                        continue
+
                     nonRefToks = [x for x in toks if not isinstance(x, Reference)]
                     nouns = getNouns(" ".join(nonRefToks))
                     tokTexts.append(nouns)

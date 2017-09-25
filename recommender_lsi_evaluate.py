@@ -45,7 +45,7 @@ def evaluate_lsi():
     qe = QueryEngine()
 
     print("Computing statistics ...")
-    idx = 0
+    ctr = 0
     for file in tqdm(glob.glob(data_glob), unit='files'):
         with open(file, 'r') as myfile:
             data = myfile.read().split("\n============\n")
@@ -53,19 +53,19 @@ def evaluate_lsi():
                 sentence = sentence.replace("<formula>", " ")
                 toks = sentence_words(sentence)
                 if any(isinstance(t, Reference) for t in toks):
-                    if idx % 100 != 0:
-                        idx += 1
+                    ctr += 1
+                    if ctr % 100 != 0:
                         continue
 
                     nonRefToks = [x for x in toks if not isinstance(x, Reference)]
                     plainSentence = " ".join(nonRefToks)
-                    results = qe.recommendCits(plainSentence, 25)
+                    results = qe.recommendCits(plainSentence, 50)
                     actualRefs = [x for x in toks if isinstance(x, Reference)]
                     compareResult(results, actualRefs, 1)
                     compareResult(results, actualRefs, 5)
                     compareResult(results, actualRefs, 10)
-
-                    idx += 1
+                    compareResult(results, actualRefs, 25)
+                    compareResult(results, actualRefs, 50)
 
     printResult()
 
