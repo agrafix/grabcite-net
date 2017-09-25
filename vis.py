@@ -108,8 +108,9 @@ for file in glob.glob(data_glob):
     if os.path.exists(metaName):
         with open(metaName, 'r') as metaHandle:
             data = json.loads(metaHandle.read())
-            myUrl = data["info"]["url"]
-            dataSetPapers.add(myUrl)
+            myUrl = data["url"]
+            if myUrl is not None:
+                dataSetPapers.add(myUrl)
     print("DBLP of " + file + " is " + str(myUrl))
 
     with open(file, 'r') as myfile:
