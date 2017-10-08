@@ -31,6 +31,7 @@ authorMap = []
 journalMap = []
 yearMap = []
 hasCitMap = []
+citDifMap = []
 
 def countUp(d, key):
     if key != None and key != "":
@@ -47,11 +48,14 @@ def writeCsv(counter, csvName):
         for (k, v) in counter.most_common():
             cwriter.writerow([k, v])
 
-def plotHist(d, name, fname):
+def plotHist(d, name, fname, sortStyle='key'):
     counter = Counter(d)
     cats = []
     counts = []
-    for (k, v) in tqdm(counter.most_common(), desc='Bulding histogram data', unit='dp'):
+
+    mostCommon = counter.most_common()
+    mostCommon.sort(key=lambda x: x[0] if sortStyle == 'key' else x[1])
+    for (k, v) in tqdm(mostCommon, desc='Building histogram data', unit='dp'):
         cats.append(k)
         counts.append(v)
 
@@ -99,18 +103,22 @@ if not os.path.exists(dirName):
 countedPapers = set()
 
 dataSetPapers = set()
-referencePapers = set()
+referencePapers = {}
 
 print("Working on " + data_glob)
 for file in glob.glob(data_glob):
     metaName = os.path.splitext(file)[0] + ".meta"
+    refName = os.path.splitext(file)[0] + ".refs"
     myUrl = None
+    myMeta = None
     if os.path.exists(metaName):
         with open(metaName, 'r') as metaHandle:
             data = json.loads(metaHandle.read())
             myUrl = data["url"]
             if myUrl is not None:
                 dataSetPapers.add(myUrl)
+                myMeta = getEntry(myUrl)
+
     print("DBLP of " + file + " is " + str(myUrl))
 
     with open(file, 'r') as myfile:
@@ -129,22 +137,41 @@ for file in glob.glob(data_glob):
                 countUp(citTyMap, ty)
 
                 if ty == 'DBLP':
-                    referencePapers.add(ref)
+                    if ref not in referencePapers:
+                        referencePapers[ref] = 0
+                    referencePapers[ref] += 1
+
                     entry = getEntry(ref)
                     if entry != None:
                         countEntries(authorMap, entry["authors"])
                         countEntries(journalMap, [entry["journal"]])
                         countEntries(yearMap, [str(entry["year"])])
 
+                        if myMeta is not None and myMeta["year"] is not None and entry["year"] is not None:
+                            yearDif = myMeta["year"] - entry["year"]
+
+                            if yearDif >= 0:
+                                countEntries(citDifMap, [yearDif])
+
+
 # Plot all the things
-plotHist(hasCitMap, "Sentences with Citation", dirName + "/cit_yn.png")
-plotHist(citMap, "Citations", dirName + "/cits.png")
-plotHist(citTyMap, "Citation Types", dirName + "/cit_ty.png")
-plotHist(authorMap, "Authors", dirName + "/authors.png")
-plotHist(journalMap, "Journals", dirName + "/journals.png")
-plotHist(yearMap, "Years", dirName + "/years.png")
+plotHist(hasCitMap, "Sentences with Citation", dirName + "/cit_yn.png", sortStyle='key')
+plotHist(citMap, "Citations", dirName + "/cits.png", sortStyle='value')
+plotHist(citTyMap, "Citation Types", dirName + "/cit_ty.png", sortStyle='value')
+plotHist(authorMap, "Authors", dirName + "/authors.png", sortStyle='value')
+plotHist(journalMap, "Journals", dirName + "/journals.png", sortStyle='value')
+plotHist(yearMap, "Years", dirName + "/years.png", sortStyle='key')
+plotHist(citDifMap, "Year Difference", dirName + "/year-diff.png", sortStyle='key')
 
 # Graph info
-print("Inner-graph citations: " + str(len(referencePapers.intersection(dataSetPapers))))
-print("Dangeling citations: " + str(len(referencePapers.difference(dataSetPapers))))
-print("Uncited graph papers: " + str(len(dataSetPapers.difference(referencePapers))))
+refKeys = set(referencePapers.keys())
+inGraphRefs = { k: referencePapers[k] for k in dataSetPapers if k in referencePapers }
+
+totalInner = 0
+for r, ct in inGraphRefs.items():
+    totalInner += ct
+
+print("Total Inner-graph citations: " + str(totalInner))
+print("Unique Inner-graph citations: " + str(len(refKeys.intersection(dataSetPapers))))
+print("Unique Dangeling citations: " + str(len(refKeys.difference(dataSetPapers))))
+print("Unique Uncited graph papers: " + str(len(dataSetPapers.difference(refKeys))))
